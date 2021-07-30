@@ -1,8 +1,8 @@
 {
   "name": "react-native-kassen-printer",
   "title": "React Native Kassen Printer",
-  "version": "1.0.0",
-  "description": "TODO",
+  "version": "1.0.1",
+  "description": "React native kassen printer for Kassen Printer DT-640 BT",
   "main": "index.js",
   "files": [
     "README.md",
@@ -16,8 +16,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/github_account/react-native-kassen-printer.git",
-    "baseUrl": "https://github.com/github_account/react-native-kassen-printer"
+    "url": "git+https://github.com/archimondee/react-native-kassen-printer.git",
+    "baseUrl": "https://github.com/archimondee/react-native-kassen-printer"
   },
   "keywords": [
     "react-native"

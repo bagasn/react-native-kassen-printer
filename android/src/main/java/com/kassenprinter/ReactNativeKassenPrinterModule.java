@@ -159,7 +159,7 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
         reactContext.bindService(intent, mSerconnection, Context.BIND_AUTO_CREATE);
         //show(a, Toast.LENGTH_LONG);
         if (a.equals(null) || a.equals("")) {
-            show("Failed null", Toast.LENGTH_SHORT);
+            show("Failed", Toast.LENGTH_SHORT);
         } else {
             //show("onn here success"+a, Toast.LENGTH_SHORT);
             myBinder.ConnectBtPort(a, new TaskCallback() {
@@ -193,12 +193,12 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
             myBinder.WriteSendData(new TaskCallback() {
                 @Override
                 public void OnSucceed() {
-                    show("Berhasil anjim", Toast.LENGTH_LONG);
+                    show("Success", Toast.LENGTH_LONG);
                 }
 
                 @Override
                 public void OnFailed() {
-                    show("Gagal", Toast.LENGTH_LONG);
+                    show("Failed", Toast.LENGTH_LONG);
 
                 }
             }, new ProcessData() {
@@ -224,33 +224,35 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
                         JSONArray aaa = convertArrayToJson(printBuffer);
 
                         for (int i = 0; i < aaa.length(); i++) {
-                            if (i == 1) {
-                                list.add(DataForSendToPrinterTSC.text(340, 10, "TSS24.BF2", 0, 1, 1, "" + aaa.getString(i)));
-                            } else {
-                                if(aaa.getString(i).length() > 28) {
-
-                                    int paragraphLength = 28;
-                                    ArrayList<String> array = new ArrayList<String>();
-                                    for (int index = 0; index < aaa.getString(i).length(); index += 28) {
-                                        int endIndex = index + 28;
-                                        if (endIndex > aaa.getString(i).length()) {
-                                            endIndex = aaa.getString(i).length();
-                                        }
-                                        String paragraph = aaa.getString(i).substring(index, endIndex);
-                                        array.add(paragraph);
-                                    }
-
-                                    for (String p: array) {
-                                        list.add(DataForSendToPrinterTSC.text(40, 10 + paper, "TSS24.BF2", 0, 1, 1, "" + p));
-                                        //System.out.println("printing 2 : "+array.get(k));
-                                        paper += 25;
-                                    }
-                                }else{
-                                    list.add(DataForSendToPrinterTSC.text(40, 10 + paper, "TSS24.BF2", 0, 1, 1, "" + aaa.getString(i)));
-                                    paper += 25;
-                                }
-
-                            }
+                            list.add(DataForSendToPrinterTSC.text(40, 10 + paper, "TSS24.BF2", 0, 1, 1, "" + aaa.getString(i)));
+                            paper += 25;
+//                            if (i == 1) {
+//                                list.add(DataForSendToPrinterTSC.text(340, 10, "TSS24.BF2", 0, 1, 1, "" + aaa.getString(i)));
+//                            } else {
+//                                if(aaa.getString(i).length() > 28) {
+//
+//                                    int paragraphLength = 28;
+//                                    ArrayList<String> array = new ArrayList<String>();
+//                                    for (int index = 0; index < aaa.getString(i).length(); index += 28) {
+//                                        int endIndex = index + 28;
+//                                        if (endIndex > aaa.getString(i).length()) {
+//                                            endIndex = aaa.getString(i).length();
+//                                        }
+//                                        String paragraph = aaa.getString(i).substring(index, endIndex);
+//                                        array.add(paragraph);
+//                                    }
+//
+//                                    for (String p: array) {
+//                                        list.add(DataForSendToPrinterTSC.text(40, 10 + paper, "TSS24.BF2", 0, 1, 1, "" + p));
+//                                        //System.out.println("printing 2 : "+array.get(k));
+//                                        paper += 25;
+//                                    }
+//                                }else{
+//                                    list.add(DataForSendToPrinterTSC.text(40, 10 + paper, "TSS24.BF2", 0, 1, 1, "" + aaa.getString(i)));
+//
+//                                }
+//
+//                            }
 
 
                         }
@@ -278,7 +280,7 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
             });
 
         } else {
-            show("Ini apa anjing", Toast.LENGTH_LONG);
+            show("Failed", Toast.LENGTH_LONG);
         }
 
     }
