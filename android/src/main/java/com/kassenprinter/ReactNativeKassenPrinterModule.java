@@ -63,7 +63,7 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             myBinder = (IMyBinder) service;
-            show("Connected to printer", Toast.LENGTH_LONG);
+            //show("Connected to printer", Toast.LENGTH_LONG);
             Log.e("myBinder", "connect");
         }
 
@@ -124,7 +124,7 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         btList.clear();
         if (!bluetoothAdapter.isEnabled() && bluetoothAdapter != null) {
-            show("Bluetooth disabled", Toast.LENGTH_SHORT);
+            //show("Bluetooth disabled", Toast.LENGTH_SHORT);
             //checkBluetooth();
         } else {
             Set<BluetoothDevice> device = bluetoothAdapter.getBondedDevices();
@@ -155,11 +155,12 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
     @ReactMethod
     private void connectPrinter(String address, final Promise promise) {
         String a = address.trim();
+        
         Intent intent = new Intent(reactContext, PosprinterService.class);
         reactContext.bindService(intent, mSerconnection, Context.BIND_AUTO_CREATE);
         //show(a, Toast.LENGTH_LONG);
         if (a.equals(null) || a.equals("")) {
-            show("Failed", Toast.LENGTH_SHORT);
+            //show("Failed", Toast.LENGTH_SHORT);
         } else {
             //show("onn here success"+a, Toast.LENGTH_SHORT);
             myBinder.ConnectBtPort(a, new TaskCallback() {
@@ -187,19 +188,21 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    private void print(final ReadableArray printBuffer) {
+    private void print(final ReadableArray printBuffer, final Promise promise) {
         if (ISCONNECT) {
-
+        Intent intent = new Intent(reactContext, PosprinterService.class);
+        reactContext.bindService(intent, mSerconnection, Context.BIND_AUTO_CREATE);
             myBinder.WriteSendData(new TaskCallback() {
                 @Override
                 public void OnSucceed() {
-                    show("Success", Toast.LENGTH_LONG);
+                    //show("Success", Toast.LENGTH_LONG);
+                    promise.resolve(true);
                 }
 
                 @Override
                 public void OnFailed() {
-                    show("Failed", Toast.LENGTH_LONG);
-
+                    //show("Failed", Toast.LENGTH_LONG);
+                    promise.resolve(false);
                 }
             }, new ProcessData() {
                 @Override
@@ -214,7 +217,7 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
                     list.add(DataForSendToPrinterTSC.cls());
                     // set direction
                     list.add(DataForSendToPrinterTSC.direction(0));
-                    // barcode
+                    // barcodes
                     //list.add(DataForSendToPrinterTSC.offSetBymm(40));
                     int bufferLength = printBuffer.size() + 1;
                     int paper = 0;
@@ -280,7 +283,8 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
             });
 
         } else {
-            show("Failed", Toast.LENGTH_LONG);
+            //show("Failed", Toast.LENGTH_LONG);
+            promise.resolve(false);
         }
 
     }
