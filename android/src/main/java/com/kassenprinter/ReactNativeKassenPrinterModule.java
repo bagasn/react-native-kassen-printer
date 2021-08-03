@@ -188,7 +188,7 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    private void print(final ReadableArray printBuffer, final Promise promise) {
+    private void print(final Integer paperSize, final ReadableArray printBuffer, final Promise promise) {
         if (ISCONNECT) {
         Intent intent = new Intent(reactContext, PosprinterService.class);
         reactContext.bindService(intent, mSerconnection, Context.BIND_AUTO_CREATE);
@@ -209,7 +209,7 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
                 public List<byte[]> processDataBeforeSend() {
                     List<byte[]> list = new ArrayList<>();
                     // Label size
-                    list.add(DataForSendToPrinterTSC.sizeBymm(50, 30));
+                    list.add(DataForSendToPrinterTSC.sizeBymm(paperSize, 30));
                     // gap
                     list.add(DataForSendToPrinterTSC.gapBymm(10, 0));
 
