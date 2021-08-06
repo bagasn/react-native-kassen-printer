@@ -1,5 +1,8 @@
 # react-native-kassen-printer
 
+Tested in Kassen Printer Bluetooth DT-640
+Android only
+
 ## Getting started
 
 `$ npm install react-native-kassen-printer --save`
