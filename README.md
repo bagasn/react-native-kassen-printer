@@ -12,6 +12,20 @@
 ```javascript
 import ReactNativeKassenPrinter from 'react-native-kassen-printer';
 
-// TODO: What to do with the module?
-ReactNativeKassenPrinter;
+//Check bluetooth module if enable or disable
+await ReactNativeKassenPrinter.checkBluetooth();
+
+//Find available device bluetooth
+await ReactNativeKassenPrinter.findAvailableDevice();
+
+//Connect to printer and print the array string
+await ReactNativeKassenPrinter.connectPrinter(btAddress).
+  .then(async (check) => {
+    if(check == false){
+      //Run this if connect bluetooth printer error
+    }else{
+      await ReactNativeKassenPrinter.print(paperSize, [string])
+    }
+  }
 ```
+
