@@ -137,7 +137,7 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
                     //btList.add(btd.getName()+'\n'+btd.getAddress());
                     btList.add(btd.getAddress());
                     //dataBt.putString(String.valueOf("bt-"+key), btd.getAddress());
-                    dataBt.pushString(String.valueOf(btd.getName() + "-" + btd.getAddress()));
+                    dataBt.pushString(String.valueOf(btd.getName() + "=" + btd.getAddress()));
                     //BtBoudAdapter.notifyDataSetChanged();
                     key++;
                 }
