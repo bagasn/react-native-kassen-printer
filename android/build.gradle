@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    api files('libs/PosPrinterSDK.jar')
+    api files('libs/sdk_printer_kassen.jar')
     api 'com.facebook.react:react-native:+'
     api 'com.google.zxing:core:3.2.1'
 }

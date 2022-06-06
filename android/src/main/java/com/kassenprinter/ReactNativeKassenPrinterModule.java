@@ -2,20 +2,16 @@
 
 package com.kassenprinter;
 
-import android.app.AlertDialog;
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Resources;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import com.facebook.react.bridge.Promise;
@@ -23,22 +19,17 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 
+import com.kassenprinter.config.Constant;
 import net.posprinter.posprinterface.IMyBinder;
 import net.posprinter.posprinterface.ProcessData;
-import net.posprinter.posprinterface.TaskCallback;
+import net.posprinter.posprinterface.UiExecute;
 import net.posprinter.service.PosprinterService;
 import net.posprinter.utils.DataForSendToPrinterTSC;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableArray;
@@ -55,28 +46,45 @@ import org.json.JSONObject;
 
 public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
 
-    private final ReactApplicationContext reactContext;
-    public static boolean ISCONNECT = false;
-    public static IMyBinder myBinder;
+    private final String TAG = "KassenPrinterModule";
 
-    ServiceConnection mSerconnection = new ServiceConnection() {
+    private final ReactApplicationContext reactContext;
+
+    private BluetoothAdapter bluetoothAdapter;
+
+    /**
+     * Printer Label Session
+     */
+
+    private Boolean isConnectToPrinterLabel = false;
+
+    private static IMyBinder mLabelBinder;
+
+    private final ServiceConnection mLabelServiceConnection = new ServiceConnection() {
         @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            myBinder = (IMyBinder) service;
-            //show("Connected to printer", Toast.LENGTH_LONG);
-            Log.e("myBinder", "connect");
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            printLog("Service to printer label is running");
+
+            isConnectToPrinterLabel = false;
+            mLabelBinder = ((IMyBinder) iBinder);
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-            Log.e("myBinder", "disconnect");
+        public void onServiceDisconnected(ComponentName componentName) {
+            printLog("Service to printer label is shutdown");
+
+            isConnectToPrinterLabel = false;
+            mLabelBinder = null;
         }
     };
+
+    /**
+     * Printer Label End Session
+     */
 
     public ReactNativeKassenPrinterModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
-
     }
 
     @Override
@@ -87,21 +95,11 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void sampleMethod(String stringArgument, int numberArgument, Callback callback) {
         // TODO: Implement some actually useful functionality
-        callback.invoke("Received numberArgument: " + numberArgument + " stringArgument: " + stringArgument);
+        callback.invoke("Received numberArgument: " + numberArgument +
+                " stringArgument: " + stringArgument);
     }
 
-    private List<String> btList = new ArrayList<>();
-    private ArrayList<String> btFoundList = new ArrayList<>();
-    private ArrayAdapter<String> BtBoudAdapter, BtfoundAdapter;
-    private View BtDialogView;
-    private ListView BtBoundLv, BtFoundLv;
-    private LinearLayout ll_BtFound;
-    private AlertDialog btdialog;
-    private Button btScan;
-    //private DeviceReceiver BtReciever;
-    private BluetoothAdapter bluetoothAdapter;
-
-
+    @Deprecated
     @ReactMethod
     public void checkBluetooth() {
         //This method will check and connect to printer or nor.
@@ -109,22 +107,18 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
         if (!bluetoothAdapter.isEnabled()) {
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             reactContext.startActivityForResult(intent, 1, null);
-
         } else {
-            //show("bluetooth enabled", Toast.LENGTH_SHORT);
-//      BtReciever=new DeviceReceiver(btFoundList,BtfoundAdapter,BtFoundLv);
             Intent intent = new Intent(reactContext, PosprinterService.class);
-            reactContext.bindService(intent, mSerconnection, Context.BIND_AUTO_CREATE);
-
+            reactContext.bindService(intent, mLabelServiceConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
     @ReactMethod
     public void findAvailableDevice(Promise promise) {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        btList.clear();
+
         if (!bluetoothAdapter.isEnabled() && bluetoothAdapter != null) {
-            //show("Bluetooth disabled", Toast.LENGTH_SHORT);
+            show("Bluetooth tidak aktif");
             //checkBluetooth();
         } else {
             Set<BluetoothDevice> device = bluetoothAdapter.getBondedDevices();
@@ -134,74 +128,61 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
                 //存在已经配对过的蓝牙设备
                 for (Iterator<BluetoothDevice> it = device.iterator(); it.hasNext(); ) {
                     BluetoothDevice btd = it.next();
-                    //btList.add(btd.getName()+'\n'+btd.getAddress());
-                    btList.add(btd.getAddress());
-                    //dataBt.putString(String.valueOf("bt-"+key), btd.getAddress());
+
                     dataBt.pushString(String.valueOf(btd.getName() + "=" + btd.getAddress()));
-                    //BtBoudAdapter.notifyDataSetChanged();
                     key++;
                 }
-                //connectBT(btList.get(1));
+
                 promise.resolve(dataBt);
-//      printBarcode();
-                //show(btList.get(1), Toast.LENGTH_LONG);
-            } else {  //不存在已经配对过的蓝牙设备
-                btList.add("No can be matched to use bluetooth");
-                BtBoudAdapter.notifyDataSetChanged();
             }
         }
     }
 
     @ReactMethod
     private void connectPrinter(String address, final Promise promise) {
-        String a = address.trim();
-        
-        Intent intent = new Intent(reactContext, PosprinterService.class);
-        reactContext.bindService(intent, mSerconnection, Context.BIND_AUTO_CREATE);
-        //show(a, Toast.LENGTH_LONG);
-        if (a.equals(null) || a.equals("")) {
-            //show("Failed", Toast.LENGTH_SHORT);
+        String btAddress = address.trim();
+
+        if (mLabelBinder == null) {
+            Intent intent = new Intent(reactContext, PosprinterService.class);
+            reactContext.bindService(intent, mLabelServiceConnection, Context.BIND_AUTO_CREATE);
+        }
+
+        if (btAddress.isEmpty()) {
+            show("Alamat bluetooth tidak valid", Toast.LENGTH_SHORT);
+            promise.resolve(false);
         } else {
-            //show("onn here success"+a, Toast.LENGTH_SHORT);
-            myBinder.ConnectBtPort(a, new TaskCallback() {
+            mLabelBinder.connectBtPort(btAddress, new UiExecute() {
                 @Override
-                public void OnSucceed() {
-                    ISCONNECT = true;
-                    //show("Sucess", Toast.LENGTH_SHORT);
+                public void onsucess() {
+                    isConnectToPrinterLabel = true;
+
                     promise.resolve(true);
-                    //printBarcode();
                 }
 
                 @Override
-                public void OnFailed() {
-                    ISCONNECT = false;
-                    //promise.resolve("Error");
+                public void onfailed() {
+                    isConnectToPrinterLabel = false;
+
                     promise.resolve(false);
-                    //show("Failed error", Toast.LENGTH_SHORT);
                 }
             });
         }
     }
 
-    public void show(String message, int duration) {
-        Toast.makeText(getReactApplicationContext(), message, duration).show();
-    }
-
+    @Deprecated
     @ReactMethod
     private void print(final Integer paperSize, final ReadableArray printBuffer, final Promise promise) {
-        if (ISCONNECT) {
-        Intent intent = new Intent(reactContext, PosprinterService.class);
-        reactContext.bindService(intent, mSerconnection, Context.BIND_AUTO_CREATE);
-            myBinder.WriteSendData(new TaskCallback() {
+        if (isConnectToPrinterLabel) {
+//            Intent intent = new Intent(reactContext, PosprinterService.class);
+//            reactContext.bindService(intent, mLabelServiceConnection, Context.BIND_AUTO_CREATE);
+            mLabelBinder.writeDataByYouself(new UiExecute() {
                 @Override
-                public void OnSucceed() {
-                    //show("Success", Toast.LENGTH_LONG);
+                public void onsucess() {
                     promise.resolve(true);
                 }
 
                 @Override
-                public void OnFailed() {
-                    //show("Failed", Toast.LENGTH_LONG);
+                public void onfailed() {
                     promise.resolve(false);
                 }
             }, new ProcessData() {
@@ -217,76 +198,192 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
                     list.add(DataForSendToPrinterTSC.cls());
                     // set direction
                     list.add(DataForSendToPrinterTSC.direction(0));
-                    // barcodes
-                    //list.add(DataForSendToPrinterTSC.offSetBymm(40));
+
                     int bufferLength = printBuffer.size() + 1;
+
                     int paper = 0;
 
-
                     try {
-                        JSONArray aaa = convertArrayToJson(printBuffer);
+                        JSONArray jsonArray = convertArrayToJson(printBuffer);
 
-                        for (int i = 0; i < aaa.length(); i++) {
-                            list.add(DataForSendToPrinterTSC.text(40, 10 + paper, "TSS24.BF2", 0, 1, 1, "" + aaa.getString(i)));
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            list.add(DataForSendToPrinterTSC.text(
+                                    10,
+                                    10 + paper,
+                                    "TSS24.BF2",
+                                    0,
+                                    1,
+                                    1,
+                                    "" + jsonArray.getString(i))
+                            );
                             paper += 25;
-//                            if (i == 1) {
-//                                list.add(DataForSendToPrinterTSC.text(340, 10, "TSS24.BF2", 0, 1, 1, "" + aaa.getString(i)));
-//                            } else {
-//                                if(aaa.getString(i).length() > 28) {
-//
-//                                    int paragraphLength = 28;
-//                                    ArrayList<String> array = new ArrayList<String>();
-//                                    for (int index = 0; index < aaa.getString(i).length(); index += 28) {
-//                                        int endIndex = index + 28;
-//                                        if (endIndex > aaa.getString(i).length()) {
-//                                            endIndex = aaa.getString(i).length();
-//                                        }
-//                                        String paragraph = aaa.getString(i).substring(index, endIndex);
-//                                        array.add(paragraph);
-//                                    }
-//
-//                                    for (String p: array) {
-//                                        list.add(DataForSendToPrinterTSC.text(40, 10 + paper, "TSS24.BF2", 0, 1, 1, "" + p));
-//                                        //System.out.println("printing 2 : "+array.get(k));
-//                                        paper += 25;
-//                                    }
-//                                }else{
-//                                    list.add(DataForSendToPrinterTSC.text(40, 10 + paper, "TSS24.BF2", 0, 1, 1, "" + aaa.getString(i)));
-//
-//                                }
-//
-//                            }
-
-
                         }
-
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                    //list.add(DataForSendToPrinterTSC.text(40,10+paper,"TSS24.BF2",0,1,1, ""+));
-
-                    //list.add(DataForSendToPrinterTSC.barCode(40,15,"128",100,1,0,2,2,"abcdef12345"));
-                    // text
-//                    list.add(DataForSendToPrinterTSC.text(40,10,"TSS24.BF2",0,1,1,"29072021"));
-//                    list.add(DataForSendToPrinterTSC.text(320,10,"TSS24.BF2",0,1,1,"1/1"));
-//                   //list.add(DataForSendToPrinterTSC.block(40,10,10,10,"TSS24.BF2",0,1, 1, 0, 3, "1/1"));
-////                    //list.add(DataForSendToPrinterTSC.bar(40,10, 5, 80));
-//                    list.add(DataForSendToPrinterTSC.text(40,40,"TSS24.BF2",0,1,1,"* kopi susu"));
-//                    list.add(DataForSendToPrinterTSC.text(40,70,"TSS24.BF2",0,1,1,"这是测试文本 Testing testing"));
-
 
                     // print
                     list.add(DataForSendToPrinterTSC.print(1));
+                    Log.i(TAG, "Print Data: " + list);
 
                     return list;
                 }
             });
 
         } else {
-            //show("Failed", Toast.LENGTH_LONG);
             promise.resolve(false);
         }
+    }
 
+    @ReactMethod
+    public void setPrinterToReady(final String address, final Promise promise) {
+        printLog("NATIVE FUN - set printer to ready");
+        if (!isBluetoothEnable()) {
+            printLog("Bluetooth disable");
+            promise.resolve(false);
+//            promise.reject(Constant.ERROR_BLUETOOTH_DISABLE, "KASSEN: Printer disabled");
+            return;
+        }
+
+        if (mLabelBinder == null) {
+            Intent request = new Intent(reactContext, PosprinterService.class);
+            reactContext.bindService(request, mLabelServiceConnection, Context.BIND_AUTO_CREATE);
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    int timer = 0;
+
+                    printLog("Try to bind service on " + timer + "ms");
+                    while (mLabelBinder == null) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            printLog("While waiting the binder to bound\n" + e);
+                        } finally {
+                            timer += 200;
+                        }
+                    }
+
+//                    promise.resolve(true);
+
+                    printLog("Waiting for binder ready - Connecting to printer label");
+                    connectToPrinterLabel(address, promise);
+                }
+            }).start();
+        } else {
+//            promise.resolve(true);
+
+            if (isConnectToPrinterLabel) {
+                promise.resolve(true);
+            } else {
+                printLog("Binder ready - Connecting to printer label");
+                connectToPrinterLabel(address, promise);
+            }
+        }
+    }
+
+    @ReactMethod
+    public void connectToPrinterLabel(String address, final Promise promise) {
+        if (isConnectToPrinterLabel) {
+            promise.resolve(true);
+            return;
+        }
+
+        mLabelBinder.connectBtPort(address, new UiExecute() {
+            @Override
+            public void onsucess() {
+                Log.i(TAG, "Connected to printer label");
+
+                isConnectToPrinterLabel = true;
+                promise.resolve(true);
+            }
+
+            @Override
+            public void onfailed() {
+                Log.e(TAG, "Connecting printer label failed");
+
+                isConnectToPrinterLabel = false;
+                promise.resolve(false);
+//                promise.reject(Constant.ERROR_CANNOT_CONNECT_TO_PRINTER, "Cannot connect to printer");
+            }
+        });
+    }
+
+    @ReactMethod
+    public void printLabel(
+            final Integer paperWidth,
+            final Integer paperHeight,
+            final ReadableArray readableArray,
+            final Promise promise) {
+        mLabelBinder.writeDataByYouself(new UiExecute() {
+            @Override
+            public void onsucess() {
+                promise.resolve(true);
+            }
+
+            @Override
+            public void onfailed() {
+                promise.resolve(false);
+            }
+        }, new ProcessData() {
+            @Override
+            public List<byte[]> processDataBeforeSend() {
+                List<byte[]> list = new ArrayList<>();
+
+                list.add(DataForSendToPrinterTSC.sizeBymm(paperWidth, paperHeight));
+//                list.add(DataForSendToPrinterTSC.gapBymm(20, 0));
+                list.add(DataForSendToPrinterTSC.cls());
+
+                int lineColumnY = 0;
+
+                try {
+                    JSONArray jsonArray = convertArrayToJson(readableArray);
+
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        list.add(DataForSendToPrinterTSC.text(
+                                10,
+                                10 + lineColumnY,
+                                "TSS24.BF2",
+                                0,
+                                1,
+                                1,
+                                "" + jsonArray.getString(i))
+                        );
+                        lineColumnY += 25;
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                // print
+                list.add(DataForSendToPrinterTSC.print(1));
+
+                return list;
+            }
+        });
+    }
+
+    private Boolean isBluetoothEnable() {
+        if (bluetoothAdapter == null) {
+            bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        }
+        return bluetoothAdapter.isEnabled();
+    }
+
+
+    public void show(String message, int duration) {
+        Toast.makeText(reactContext, message, duration).show();
+    }
+
+    public void show(String message) {
+        Toast.makeText(reactContext, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void printLog(Object message) {
+//        System.out.println(message);
+        Log.d(TAG, message.toString());
     }
 
     private static WritableMap convertJsonToMap(JSONObject jsonObject) throws JSONException {
