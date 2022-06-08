@@ -315,6 +315,9 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
     public void printLabel(
             final Integer paperWidth,
             final Integer paperHeight,
+            final Integer offsetX,
+            final Integer offsetY,
+            final String fontSize,
             final ReadableArray readableArray,
             final Promise promise) {
         mLabelBinder.writeDataByYouself(new UiExecute() {
@@ -333,25 +336,29 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
                 List<byte[]> list = new ArrayList<>();
 
                 list.add(DataForSendToPrinterTSC.sizeBymm(paperWidth, paperHeight));
-//                list.add(DataForSendToPrinterTSC.gapBymm(20, 0));
                 list.add(DataForSendToPrinterTSC.cls());
 
                 int lineColumnY = 0;
 
                 try {
                     JSONArray jsonArray = convertArrayToJson(readableArray);
-
+                    int theX = offsetX / 2;
                     for (int i = 0; i < jsonArray.length(); i++) {
                         list.add(DataForSendToPrinterTSC.text(
-                                10,
-                                10 + lineColumnY,
-                                "TSS24.BF2",
+                                Math.round((theX)),
+                                offsetY + lineColumnY,
+                                fontSize,
                                 0,
                                 1,
                                 1,
                                 "" + jsonArray.getString(i))
                         );
-                        lineColumnY += 25;
+
+                        int addY = 25;
+                        if (fontSize.equals("1")) {
+                            addY = 15;
+                        }
+                        lineColumnY += addY;
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -371,7 +378,6 @@ public class ReactNativeKassenPrinterModule extends ReactContextBaseJavaModule {
         }
         return bluetoothAdapter.isEnabled();
     }
-
 
     public void show(String message, int duration) {
         Toast.makeText(reactContext, message, duration).show();
