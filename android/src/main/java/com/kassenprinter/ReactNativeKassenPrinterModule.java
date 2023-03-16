@@ -20,11 +20,11 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 
 import com.kassenprinter.config.Constant;
-import net.posprinter.posprinterface.IMyBinder;
-import net.posprinter.posprinterface.ProcessData;
-import net.posprinter.posprinterface.UiExecute;
-import net.posprinter.service.PosprinterService;
-import net.posprinter.utils.DataForSendToPrinterTSC;
+import com.lunalib.kassenprinter.posprinterface.IMyBinder;
+import com.lunalib.kassenprinter.posprinterface.ProcessData;
+import com.lunalib.kassenprinter.posprinterface.UiExecute;
+import com.lunalib.kassenprinter.service.PosprinterService;
+import com.lunalib.kassenprinter.utils.DataForSendToPrinterTSC;
 
 import java.util.ArrayList;
 import java.util.Iterator;
