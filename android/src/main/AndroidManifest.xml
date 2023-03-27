@@ -18,8 +18,12 @@
 
     <application>
       
-      <service android:name="com.lunalib.kassenprinter.service.PosprinterService" />
-      <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" />
+      <service 
+        android:name="com.lunalib.kassenprinter.service.PosprinterService"
+        android:exported="true" />
+      <activity 
+        android:name="com.facebook.react.devsupport.DevSettingsActivity"
+        android:exported="true" />
     </application>
 
 </manifest>
