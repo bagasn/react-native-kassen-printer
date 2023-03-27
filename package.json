@@ -1,7 +1,7 @@
 {
   "name": "react-native-kassen-printer",
   "title": "React Native Kassen Printer",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "React native kassen printer for Kassen Printer DT-640 BT",
   "main": "index.js",
   "files": [
